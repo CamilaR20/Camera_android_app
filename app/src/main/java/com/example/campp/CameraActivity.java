@@ -19,6 +19,7 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.util.Log;
 import android.view.Display;
+import android.view.Surface;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
@@ -142,6 +143,10 @@ public class CameraActivity extends AppCompatActivity {
                 new ImageCapture.Builder()
                         .setTargetRotation(display.getRotation())
                         .build();
+//        imageCapture =
+//                new ImageCapture.Builder()
+//                        .setTargetRotation(Surface.ROTATION_0)
+//                        .build();
         cameraProvider.unbindAll();
         cameraProvider.bindToLifecycle(this, cameraSelector, imageCapture, preview);
     }
