@@ -203,6 +203,7 @@ public class CameraActivity extends AppCompatActivity {
                     public void onVideoSaved(VideoCapture.OutputFileResults outputFileResults) {
                         // Image path to send to other activity
                         Log.d("pathtopic", "Video was saved");
+                        goToTest();
                     }
 
                     @Override
@@ -215,13 +216,11 @@ public class CameraActivity extends AppCompatActivity {
 }
 
     @SuppressLint("RestrictedApi")
-    public void goToTest(View view){
+    public void stopRec(View view) {
         videoCapture.stopRecording();
-//        Intent intent = new Intent(this, TestActivity.class);
-//        intent.putExtra("imPath", pathToPicture);
-//        startActivity(intent);
     }
 
+    // In case there is an error on saving image or video
     void errorAlert(String msg){
         AlertDialog.Builder builder = new AlertDialog.Builder(CameraActivity.this);
         builder.setTitle("Error").setMessage(msg).setCancelable(false)
@@ -233,6 +232,13 @@ public class CameraActivity extends AppCompatActivity {
                 });
         AlertDialog alert = builder.create();
         alert.show();
+    }
+
+    public void goToTest(){
+        Intent intent = new Intent(this, TestActivity.class);
+        intent.putExtra("imPath", pathToPicture);
+        intent.putExtra("vidPath", pathToVideo);
+        startActivity(intent);
     }
 
 }

@@ -7,7 +7,10 @@ import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import androidx.exifinterface.media.ExifInterface;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.MediaController;
+import android.widget.VideoView;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,6 +18,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 public class TestActivity extends AppCompatActivity {
+    String pathToVideo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -22,6 +26,7 @@ public class TestActivity extends AppCompatActivity {
         setContentView(R.layout.activity_test);
 
         String pathToPicture = getIntent().getStringExtra("imPath");
+        pathToVideo = getIntent().getStringExtra("vidPath");
         loadImageFromStorage(pathToPicture);
 
     }
@@ -69,5 +74,20 @@ public class TestActivity extends AppCompatActivity {
         matrix.postRotate(rotate);
         Bitmap rotatedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
         return rotatedBitmap;
+    }
+
+    public void showVideo(View view){
+        ImageView imView = findViewById(R.id.imView);
+        imView.setVisibility(View.INVISIBLE);
+
+        VideoView vidView = findViewById(R.id.videoView);
+        vidView.setVisibility(View.VISIBLE);
+
+        vidView.setVideoPath(pathToVideo);
+        MediaController mediaController = new MediaController(this);
+        vidView.setMediaController(mediaController);
+        mediaController.setAnchorView(vidView);
+        vidView.start();
+
     }
 }
