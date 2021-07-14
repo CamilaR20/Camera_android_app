@@ -2,6 +2,7 @@ package com.example.campp;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageCapture;
@@ -12,13 +13,12 @@ import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.fragment.app.DialogFragment;
 
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.ContextWrapper;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -40,17 +40,16 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 public class CameraActivity extends AppCompatActivity {
-
     // Variables, Objects
-    private int REQUEST_CODE_PERMISSIONS = 1001;
+    // To check permisions
+    private final int REQUEST_CODE_PERMISSIONS = 1001;
     private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA",
             "android.permission.RECORD_AUDIO"};
-
+    // For Camera X
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     private Executor cameraExecutor = Executors.newSingleThreadExecutor();
     ImageCapture imageCapture;
     VideoCapture videoCapture;
-
     // Files directory, image and video paths
     File directory;
     String pathToPicture = "";
@@ -76,7 +75,7 @@ public class CameraActivity extends AppCompatActivity {
         ContextWrapper cw = new ContextWrapper(getApplicationContext());
         directory = cw.getDir("imageDir", Context.MODE_PRIVATE);
 
-        // Timer de calibración
+        // Calibration timer: to take calibration picture before each movement
         CountDownTimer calibrationTimer = new CountDownTimer(5000, 1000) {
             public void onTick(long millis) {
                 timerTxt.setText("¿Preparado? " + millis / 1000 + "s");
@@ -91,15 +90,12 @@ public class CameraActivity extends AppCompatActivity {
         // Timer de grabación
         CountDownTimer videoTimer = new CountDownTimer(5000, 1000) {
             public void onTick(long millis) {
-                timerTxt.setText("¿Preparado? " + millis / 1000 + "s");
+                timerTxt.setText("Grabando: " + millis / 1000 + "s");
             }
-
             public void onFinish() {
-                // Captura video
-
+                // Stops recording
             }
         };
-
         calibrationTimer.start();
     }
 
@@ -127,13 +123,13 @@ public class CameraActivity extends AppCompatActivity {
         }
     }
 
-    // Camera configuration
+    // Try to access camera and configure it
     void startCamera() {
         cameraProviderFuture = ProcessCameraProvider.getInstance(this);
         cameraProviderFuture.addListener(() -> {
             try {
                 ProcessCameraProvider cameraProvider = cameraProviderFuture.get();
-                bindPreview(cameraProvider);
+                cameraConfig(cameraProvider);
             } catch (ExecutionException | InterruptedException e) {
                 // No errors need to be handled for this Future.
                 // This should never be reached.
@@ -141,8 +137,8 @@ public class CameraActivity extends AppCompatActivity {
         }, ContextCompat.getMainExecutor(this));
     }
 
-    // Add preview to show what the camera sees
-    void bindPreview(ProcessCameraProvider cameraProvider) {
+    // Camera configuration: preview, image capture and video capture
+    void cameraConfig(ProcessCameraProvider cameraProvider) {
         Preview preview = new Preview.Builder().build();
 
         CameraSelector cameraSelector = new CameraSelector.Builder()
@@ -162,6 +158,7 @@ public class CameraActivity extends AppCompatActivity {
         cameraProvider.bindToLifecycle(this, cameraSelector, imageCapture, videoCapture, preview);
     }
 
+    // To take calibration picture
     void takePicture() {
         File picturePath = new File(directory, "mytest.jpg");
         // Print path to picture
@@ -184,13 +181,13 @@ public class CameraActivity extends AppCompatActivity {
                     @Override
                     public void onError(ImageCaptureException error) {
                         Log.d("pathtopic", "Image was not saved: ON ERROR TAKE PICTURE");
-//                        DialogFragment newFragment = new SavingErrorDialogFragment();
-//                        newFragment.show(getSupportFragmentManager(), "savingError");
+                        errorAlert("No fue posible guardar foto de calibración.");
                     }
                 }
         );
     }
 
+    // To take video of movement
     @SuppressLint("RestrictedApi")
     private void takeVideo() {
         File videoPath = new File(directory, "vidtest.mp4");
@@ -210,7 +207,7 @@ public class CameraActivity extends AppCompatActivity {
 
                     @Override
                     public void onError(int videoCaptureError, @NonNull @NotNull String message, @Nullable @org.jetbrains.annotations.Nullable Throwable cause) {
-
+                        errorAlert("No fue posible guardar video.");
                     }
                 }
         );
@@ -219,35 +216,23 @@ public class CameraActivity extends AppCompatActivity {
 
     @SuppressLint("RestrictedApi")
     public void goToTest(View view){
-//        DialogFragment newFragment = new SavingErrorDialogFragment();
-//        newFragment.show(getSupportFragmentManager(), "savingError");
         videoCapture.stopRecording();
 //        Intent intent = new Intent(this, TestActivity.class);
 //        intent.putExtra("imPath", pathToPicture);
 //        startActivity(intent);
     }
 
-    public void goToMain(){
-        Intent intent = new Intent(this, MainActivity.class);
-        startActivity(intent);
+    void errorAlert(String msg){
+        AlertDialog.Builder builder = new AlertDialog.Builder(CameraActivity.this);
+        builder.setTitle("Error").setMessage(msg).setCancelable(false)
+                .setPositiveButton("Volver al inicio", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        finish();
+                    }
+                });
+        AlertDialog alert = builder.create();
+        alert.show();
     }
-
-//    // Alert Dialog to inform of error saving the video or photo
-//    public class SavingErrorDialogFragment extends DialogFragment {
-//        @Override
-//        public Dialog onCreateDialog(Bundle savedInstanceState) {
-//            // Use the Builder class for convenient dialog construction
-//            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-//            builder.setMessage("Error guardando imagen. Verificar permisos")
-//                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-//                        public void onClick(DialogInterface dialog, int id) {
-//                            //
-//                        }
-//                    });
-//            // Create the AlertDialog object and return it
-//            return builder.create();
-//        }
-//    }
-
 
 }
