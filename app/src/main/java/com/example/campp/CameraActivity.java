@@ -1,16 +1,22 @@
 package com.example.campp;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
+import androidx.camera.core.VideoCapture;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.DialogFragment;
 
+
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.Intent;
@@ -19,13 +25,14 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.util.Log;
 import android.view.Display;
-import android.view.Surface;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.util.concurrent.ExecutionException;
@@ -42,8 +49,12 @@ public class CameraActivity extends AppCompatActivity {
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     private Executor cameraExecutor = Executors.newSingleThreadExecutor();
     ImageCapture imageCapture;
+    VideoCapture videoCapture;
 
+    // Files directory, image and video paths
+    File directory;
     String pathToPicture = "";
+    String pathToVideo = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,6 +72,10 @@ public class CameraActivity extends AppCompatActivity {
                     REQUEST_CODE_PERMISSIONS);
         }
 
+        // Directory where image and video are going to be saved
+        ContextWrapper cw = new ContextWrapper(getApplicationContext());
+        directory = cw.getDir("imageDir", Context.MODE_PRIVATE);
+
         // Timer de calibración
         CountDownTimer calibrationTimer = new CountDownTimer(5000, 1000) {
             public void onTick(long millis) {
@@ -71,7 +86,6 @@ public class CameraActivity extends AppCompatActivity {
                 // Captura foto de calibración e inicia timer de video
                 takePicture();
                 statusTxt.setText("Calibrado!");
-//                goToTest();
             }
         };
         // Timer de grabación
@@ -82,7 +96,7 @@ public class CameraActivity extends AppCompatActivity {
 
             public void onFinish() {
                 // Captura video
-                timerTxt.setText("Grabando...");
+
             }
         };
 
@@ -90,9 +104,9 @@ public class CameraActivity extends AppCompatActivity {
     }
 
     // Check if permissions are granted
-    public boolean allPermissionsGranted(){
-        for(String permission : REQUIRED_PERMISSIONS){
-            if(ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED){
+    public boolean allPermissionsGranted() {
+        for (String permission : REQUIRED_PERMISSIONS) {
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
                 return false;
             }
         }
@@ -103,10 +117,10 @@ public class CameraActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
 
-        if(requestCode == REQUEST_CODE_PERMISSIONS){
-            if(allPermissionsGranted()){
+        if (requestCode == REQUEST_CODE_PERMISSIONS) {
+            if (allPermissionsGranted()) {
                 startCamera();
-            } else{
+            } else {
                 Toast.makeText(this, "Permissions not granted by the user.", Toast.LENGTH_SHORT).show();
                 this.finish();
             }
@@ -137,26 +151,20 @@ public class CameraActivity extends AppCompatActivity {
         PreviewView previewView = findViewById(R.id.previewView);
         preview.setSurfaceProvider(previewView.getSurfaceProvider());
 
+        Display display = ((WindowManager) getSystemService(WINDOW_SERVICE)).getDefaultDisplay();
 
-        Display display = ((WindowManager)getSystemService(WINDOW_SERVICE)).getDefaultDisplay();
         imageCapture =
                 new ImageCapture.Builder()
                         .setTargetRotation(display.getRotation())
                         .build();
-//        imageCapture =
-//                new ImageCapture.Builder()
-//                        .setTargetRotation(Surface.ROTATION_0)
-//                        .build();
+        videoCapture = new VideoCapture.Builder().build();
         cameraProvider.unbindAll();
-        cameraProvider.bindToLifecycle(this, cameraSelector, imageCapture, preview);
+        cameraProvider.bindToLifecycle(this, cameraSelector, imageCapture, videoCapture, preview);
     }
 
-    void takePicture(){
-        // Path to picture
-        ContextWrapper cw = new ContextWrapper(getApplicationContext());
-        File directory = cw.getDir("imageDir", Context.MODE_PRIVATE);
-        // Create imageDir
-        File picturePath = new File(directory,"mytest.jpg");
+    void takePicture() {
+        File picturePath = new File(directory, "mytest.jpg");
+        // Print path to picture
         pathToPicture = picturePath.getAbsolutePath();
         Log.d("pathtopic", pathToPicture);
 
@@ -169,21 +177,77 @@ public class CameraActivity extends AppCompatActivity {
                     @Override
                     public void onImageSaved(ImageCapture.OutputFileResults outputFileResults) {
                         // Image path to send to other activity
-                        Log.d("pathtopic", "It was saved");
+                        Log.d("pathtopic", "Image was saved");
+                        takeVideo();
                     }
+
                     @Override
                     public void onError(ImageCaptureException error) {
-                        TextView timerTxt = findViewById(R.id.textTimer); // TextView that shows timer count down
-                        timerTxt.setText("Error guardando imagen de calibración");
+                        Log.d("pathtopic", "Image was not saved: ON ERROR TAKE PICTURE");
+//                        DialogFragment newFragment = new SavingErrorDialogFragment();
+//                        newFragment.show(getSupportFragmentManager(), "savingError");
                     }
                 }
         );
     }
 
+    @SuppressLint("RestrictedApi")
+    private void takeVideo() {
+        File videoPath = new File(directory, "vidtest.mp4");
+        // Print path to picture
+        pathToVideo = videoPath.getAbsolutePath();
+        Log.d("pathtopic", pathToVideo);
+
+        VideoCapture.OutputFileOptions outputFileOptions =
+                new VideoCapture.OutputFileOptions.Builder(videoPath).build();
+
+        videoCapture.startRecording(outputFileOptions, cameraExecutor, new VideoCapture.OnVideoSavedCallback() {
+                    @Override
+                    public void onVideoSaved(VideoCapture.OutputFileResults outputFileResults) {
+                        // Image path to send to other activity
+                        Log.d("pathtopic", "Video was saved");
+                    }
+
+                    @Override
+                    public void onError(int videoCaptureError, @NonNull @NotNull String message, @Nullable @org.jetbrains.annotations.Nullable Throwable cause) {
+
+                    }
+                }
+        );
+
+}
+
+    @SuppressLint("RestrictedApi")
     public void goToTest(View view){
-        Intent intent = new Intent(this, TestActivity.class);
-        intent.putExtra("imPath", pathToPicture);
+//        DialogFragment newFragment = new SavingErrorDialogFragment();
+//        newFragment.show(getSupportFragmentManager(), "savingError");
+        videoCapture.stopRecording();
+//        Intent intent = new Intent(this, TestActivity.class);
+//        intent.putExtra("imPath", pathToPicture);
+//        startActivity(intent);
+    }
+
+    public void goToMain(){
+        Intent intent = new Intent(this, MainActivity.class);
         startActivity(intent);
     }
+
+//    // Alert Dialog to inform of error saving the video or photo
+//    public class SavingErrorDialogFragment extends DialogFragment {
+//        @Override
+//        public Dialog onCreateDialog(Bundle savedInstanceState) {
+//            // Use the Builder class for convenient dialog construction
+//            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+//            builder.setMessage("Error guardando imagen. Verificar permisos")
+//                    .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+//                        public void onClick(DialogInterface dialog, int id) {
+//                            //
+//                        }
+//                    });
+//            // Create the AlertDialog object and return it
+//            return builder.create();
+//        }
+//    }
+
 
 }
