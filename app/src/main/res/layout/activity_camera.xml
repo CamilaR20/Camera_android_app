@@ -59,4 +59,20 @@
         app:layout_constraintStart_toEndOf="@+id/textStatus"
         app:layout_constraintTop_toBottomOf="@+id/container" />
 
+    <TextView
+        android:id="@+id/textMovement"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:background="@color/white"
+        android:fontFamily="sans-serif-black"
+        android:paddingHorizontal="2dp"
+        android:text="Golpeteo de dedos \n mano izquierda"
+        android:textAlignment="center"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        android:textColor="@color/black"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -25,8 +25,10 @@ public class TestActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_test);
 
-        String pathToPicture = getIntent().getStringExtra("imPath");
-        pathToVideo = getIntent().getStringExtra("vidPath");
+        String dirPath = getIntent().getStringExtra("directory");
+
+        String pathToPicture = dirPath + "/ft_l.jpg";
+        pathToVideo = dirPath + "/ft_l.mp4";
         loadImageFromStorage(pathToPicture);
 
     }

@@ -15,8 +15,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void goToInstructions(View view){
-        Intent intent = new Intent(this, CameraActivity.class);
-//        Intent intent = new Intent(this, InstructionsActivity.class);
+//        Intent intent = new Intent(this, CameraActivity.class);
+        Intent intent = new Intent(this, InstructionsActivity.class);
         startActivity(intent);
     }
 }

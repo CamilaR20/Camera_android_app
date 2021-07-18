@@ -41,6 +41,10 @@ import java.util.concurrent.Executors;
 
 public class CameraActivity extends AppCompatActivity {
     // Variables, Objects
+    private final String[] FILE_NAMES =  new String[]{"ft_l", "ft_r", "ps_l", "ps_r", "oc_l" , "oc_r"};
+    private final String[] MOVEMENT_NAMES =  new String[]{"Golpeteo de dedos\nMano izquierda",
+            "Golpeteo de dedos\nMano derecha", "Prono-supinación\nMano izquierda", "Prono-supinación\nMano derecha",
+            "Cierre de puño\nMano izquierda" , "Cierre de puño\nMano derecha"};
     // To check permisions
     private final int REQUEST_CODE_PERMISSIONS = 1001;
     private final String[] REQUIRED_PERMISSIONS = new String[]{"android.permission.CAMERA",
@@ -48,17 +52,37 @@ public class CameraActivity extends AppCompatActivity {
     // For Camera X
     private ListenableFuture<ProcessCameraProvider> cameraProviderFuture;
     private Executor cameraExecutor = Executors.newSingleThreadExecutor();
-    ImageCapture imageCapture;
-    VideoCapture videoCapture;
+    private ImageCapture imageCapture;
+    private VideoCapture videoCapture;
     // Files directory, image and video paths
-    File directory;
-    String pathToPicture = "";
-    String pathToVideo = "";
+    private File directory;
+    private String pathToDir = "";
+    private Integer counter;
+    // Timer de grabación
+    private CountDownTimer videoTimer = new CountDownTimer(15000, 1000) {
+        public void onTick(long millis) {
+            TextView timerTxt = findViewById(R.id.textTimer); // TextView that shows timer count down
+            timerTxt.setText("Grabando: " + millis / 1000 + " s");
+        }
+        public void onFinish() {
+            // Stops recording
+            videoCapture.stopRecording();
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
+
+        pathToDir = getIntent().getStringExtra("directory");
+        counter = getIntent().getIntExtra("counter", 1);
+
+        // Textview that shows which movement
+        TextView movTxt = findViewById(R.id.textMovement);
+        movTxt.setText(MOVEMENT_NAMES[counter]);
+
+        directory = new File(pathToDir);
 
         TextView timerTxt = findViewById(R.id.textTimer); // TextView that shows timer count down
         TextView statusTxt = findViewById(R.id.textStatus); // TextView that shows status
@@ -71,14 +95,10 @@ public class CameraActivity extends AppCompatActivity {
                     REQUEST_CODE_PERMISSIONS);
         }
 
-        // Directory where image and video are going to be saved
-        ContextWrapper cw = new ContextWrapper(getApplicationContext());
-        directory = cw.getDir("imageDir", Context.MODE_PRIVATE);
-
         // Calibration timer: to take calibration picture before each movement
         CountDownTimer calibrationTimer = new CountDownTimer(5000, 1000) {
             public void onTick(long millis) {
-                timerTxt.setText("¿Preparado? " + millis / 1000 + "s");
+                timerTxt.setText("¿Preparado? " + millis / 1000 + " s");
             }
 
             public void onFinish() {
@@ -86,17 +106,7 @@ public class CameraActivity extends AppCompatActivity {
                 takePicture();
                 statusTxt.setText("Calibrado!");
             }
-        };
-        // Timer de grabación
-        CountDownTimer videoTimer = new CountDownTimer(5000, 1000) {
-            public void onTick(long millis) {
-                timerTxt.setText("Grabando: " + millis / 1000 + "s");
-            }
-            public void onFinish() {
-                // Stops recording
-            }
-        };
-        calibrationTimer.start();
+        }.start();
     }
 
     // Check if permissions are granted
@@ -160,10 +170,9 @@ public class CameraActivity extends AppCompatActivity {
 
     // To take calibration picture
     void takePicture() {
-        File picturePath = new File(directory, "mytest.jpg");
+        File picturePath = new File(directory, FILE_NAMES[counter] + ".jpg");
         // Print path to picture
-        pathToPicture = picturePath.getAbsolutePath();
-        Log.d("pathtopic", pathToPicture);
+        Log.d("pathtopic", picturePath.getAbsolutePath());
 
         // Capture and save image
         ImageCapture.OutputFileOptions outputFileOptions =
@@ -175,6 +184,7 @@ public class CameraActivity extends AppCompatActivity {
                     public void onImageSaved(ImageCapture.OutputFileResults outputFileResults) {
                         // Image path to send to other activity
                         Log.d("pathtopic", "Image was saved");
+                        videoTimer.start();
                         takeVideo();
                     }
 
@@ -190,10 +200,9 @@ public class CameraActivity extends AppCompatActivity {
     // To take video of movement
     @SuppressLint("RestrictedApi")
     private void takeVideo() {
-        File videoPath = new File(directory, "vidtest.mp4");
+        File videoPath = new File(directory, FILE_NAMES[counter] + ".mp4");
         // Print path to picture
-        pathToVideo = videoPath.getAbsolutePath();
-        Log.d("pathtopic", pathToVideo);
+        Log.d("pathtopic", videoPath.getAbsolutePath());
 
         VideoCapture.OutputFileOptions outputFileOptions =
                 new VideoCapture.OutputFileOptions.Builder(videoPath).build();
@@ -203,12 +212,12 @@ public class CameraActivity extends AppCompatActivity {
                     public void onVideoSaved(VideoCapture.OutputFileResults outputFileResults) {
                         // Image path to send to other activity
                         Log.d("pathtopic", "Video was saved");
-                        goToTest();
+                        goToOther();
                     }
 
                     @Override
                     public void onError(int videoCaptureError, @NonNull @NotNull String message, @Nullable @org.jetbrains.annotations.Nullable Throwable cause) {
-                        errorAlert("No fue posible guardar video.");
+                        errorAlert("Error on video saving.");
                     }
                 }
         );
@@ -234,11 +243,26 @@ public class CameraActivity extends AppCompatActivity {
         alert.show();
     }
 
-    public void goToTest(){
-        Intent intent = new Intent(this, TestActivity.class);
-        intent.putExtra("imPath", pathToPicture);
-        intent.putExtra("vidPath", pathToVideo);
-        startActivity(intent);
-    }
+    void goToOther(){
+        counter ++;
+        if (counter <= 5) {
+            if (counter == 2 || counter == 4){
+                Intent intent = new Intent(this, TutorialActivity.class);
+                intent.putExtra("directory", pathToDir);
+                intent.putExtra("counter", counter);
+                startActivity(intent);
 
+            } else {
+                Intent intent = new Intent(this, BreakActivity.class);
+                intent.putExtra("directory", pathToDir);
+                intent.putExtra("counter", counter);
+                startActivity(intent);
+            }
+        } else {
+            Intent intent = new Intent(this, TestActivity.class);
+            intent.putExtra("directory", pathToDir);
+            startActivity(intent);
+        }
+
+    }
 }
