@@ -26,13 +26,13 @@ public class TutorialActivity extends AppCompatActivity {
         VideoView tutorialView = findViewById(R.id.tutorialView);
 
         // According to counter choose video
-        String vidPath = "";
+        String vidPath;
         if (counter == 0){
-            vidPath = "android.resource://" + getPackageName() + "/" + R.raw.test;
+            vidPath = "android.resource://" + getPackageName() + "/" + R.raw.tutorial_ft;
         } else if (counter == 2){
-            vidPath = "android.resource://" + getPackageName() + "/" + R.raw.test1;
+            vidPath = "android.resource://" + getPackageName() + "/" + R.raw.tutorial_ps;
         } else {
-            vidPath = "android.resource://" + getPackageName() + "/" + R.raw.test2;
+            vidPath = "android.resource://" + getPackageName() + "/" + R.raw.tutorial_oc;
         }
         Uri uri = Uri.parse(vidPath);
         tutorialView.setVideoURI(uri);
