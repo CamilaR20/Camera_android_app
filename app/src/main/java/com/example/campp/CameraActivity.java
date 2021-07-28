@@ -17,9 +17,9 @@ import androidx.core.content.ContextCompat;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.content.ContextWrapper;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -27,6 +27,7 @@ import android.util.Log;
 import android.view.Display;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -86,6 +87,8 @@ public class CameraActivity extends AppCompatActivity {
 
         TextView timerTxt = findViewById(R.id.textTimer); // TextView that shows timer count down
         TextView statusTxt = findViewById(R.id.textStatus); // TextView that shows status
+        Button finishBtn = findViewById(R.id.finish_btn);
+        finishBtn.setEnabled(false);
 
         // Check permissions
         if (allPermissionsGranted()) {
@@ -107,6 +110,11 @@ public class CameraActivity extends AppCompatActivity {
                 statusTxt.setText("Calibrado!");
             }
         }.start();
+    }
+
+    private void enableBtn(){
+        Button finishBtn = findViewById(R.id.finish_btn);
+        finishBtn.setEnabled(true);
     }
 
     // Check if permissions are granted
@@ -204,6 +212,15 @@ public class CameraActivity extends AppCompatActivity {
         // Print path to picture
         Log.d("pathtopic", videoPath.getAbsolutePath());
 
+        // Enable button to stop the recording
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Button finishBtn = findViewById(R.id.finish_btn);
+                finishBtn.setEnabled(true);
+            }
+        });
+
         VideoCapture.OutputFileOptions outputFileOptions =
                 new VideoCapture.OutputFileOptions.Builder(videoPath).build();
 
@@ -245,6 +262,7 @@ public class CameraActivity extends AppCompatActivity {
 
     void goToOther(){
         counter ++;
+        counter = 6;
         if (counter <= 5) {
             if (counter == 2 || counter == 4){
                 Intent intent = new Intent(this, TutorialActivity.class);
@@ -259,10 +277,53 @@ public class CameraActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         } else {
-            Intent intent = new Intent(this, TestActivity.class);
-            intent.putExtra("directory", pathToDir);
-            startActivity(intent);
+            // Save path of last test and delete path to older one
+            SharedPreferences mPrefs = getSharedPreferences("lastTests", Context.MODE_PRIVATE);
+            String p1 = mPrefs.getString("p1", "empty");
+            String p2 = mPrefs.getString("p2", "empty");
+            String p3 = mPrefs.getString("p3", "empty");
+
+            if (p1 == "empty"){
+                Log.d("pathtopic", "entra al if");
+                p1 = pathToDir;
+            } else if (p2 == "empty") {
+                p2 = pathToDir;
+            } else if (p3 == "empty"){
+                p3 = pathToDir;
+            } else {
+                p1 = p2;
+                p2 = p3;
+                p3 = pathToDir;
+            }
+
+            SharedPreferences.Editor mEditor = mPrefs.edit();
+            mEditor.putString("p1", p1).commit();
+            mEditor.putString("p2", p2).commit();
+            mEditor.putString("p3", p3).commit();
+
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    finishAlert();
+                }
+            });
+
         }
 
+    }
+
+    // When movement videos are done
+    void finishAlert(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(CameraActivity.this);
+        builder.setTitle("Prueba Finalizada").setMessage("Prueba realizada satisfactoriamente.").setCancelable(false)
+                .setPositiveButton("Volver al inicio", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Intent intent = new Intent(CameraActivity.this, MainActivity.class);
+                        startActivity(intent);
+                    }
+                });
+        AlertDialog alert = builder.create();
+        alert.show();
     }
 }
