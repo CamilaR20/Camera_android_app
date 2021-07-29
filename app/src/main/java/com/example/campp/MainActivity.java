@@ -25,9 +25,25 @@ public class MainActivity extends AppCompatActivity {
         paths[0] = mPrefs.getString("p1", "empty");
         paths[1] = mPrefs.getString("p2", "empty");
         paths[2] = mPrefs.getString("p3", "empty");
+        Log.d("pathtopic", "PATHS: " + paths[0] + " " + paths[1] + " " + paths[2]);
 
-        String[] testsNames = {paths[0].substring(paths[0].length() - 17), paths[1].substring(paths[1].length() - 17), paths[2].substring(paths[2].length() - 17)};
-        ArrayAdapter adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_activated_1, testsNames);
+        String[] testsNames = new String[3];
+        if (paths[0].equals("empty")){
+            testsNames[0] = testsNames[1] = testsNames[2] = "empty";
+        } else if (paths[1].equals("empty")) {
+            testsNames[0] = paths[0].substring(paths[0].length() - 17);
+            testsNames[1] = testsNames[2] = "empty";
+        } else if (paths[2].equals("empty")) {
+            testsNames[0] = paths[0].substring(paths[0].length() - 17);
+            testsNames[1] = paths[1].substring(paths[1].length() - 17);
+            testsNames[2] = "empty";
+        } else {
+            testsNames[0] = paths[0].substring(paths[0].length() - 17);
+            testsNames[1] = paths[1].substring(paths[1].length() - 17);
+            testsNames[2] = paths[2].substring(paths[2].length() - 17);
+        }
+
+        ArrayAdapter adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_activated_1, testsNames);
         ListView listView = (ListView) findViewById(R.id.testsList);
         listView.setAdapter(adapter);
 
@@ -40,7 +56,6 @@ public class MainActivity extends AppCompatActivity {
                 selectedPosition = position;
             }
         });
-
     }
 
     public void sendToCloud(View view){
