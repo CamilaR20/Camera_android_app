@@ -267,7 +267,7 @@ public class CameraActivity extends AppCompatActivity {
             String p3 = mPrefs.getString("p3", "empty");
             String s1 = mPrefs.getString("s1", "F");
             String s2 = mPrefs.getString("s2", "F");
-            String s3 = mPrefs.getString("s3", "F");
+            String s3;
 
             // Delete oldest test
             if (!p3.equals("empty")){
