@@ -12,11 +12,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Campp">
-        <activity android:name=".BreakActivity"></activity>
-        <activity android:name=".TutorialActivity" />
-        <activity android:name=".InstructionsActivity" />
-        <activity android:name=".TestActivity" />
-        <activity android:name=".CameraActivity" />
+        <activity android:name=".BreakActivity" android:screenOrientation="portrait"/>
+        <activity android:name=".TutorialActivity" android:screenOrientation="portrait"/>
+        <activity android:name=".InstructionsActivity" android:screenOrientation="portrait"/>
+        <activity android:name=".TestActivity" android:screenOrientation="portrait"/>
+        <activity android:name=".CameraActivity" android:screenOrientation="portrait"/>
         <activity
             android:name=".MainActivity"
             android:screenOrientation="portrait">
