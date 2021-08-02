@@ -50,7 +50,6 @@
         android:id="@+id/finish_btn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="#FF5722"
         android:onClick="stopRec"
         android:text="Terminar"
         app:layout_constraintBottom_toBottomOf="parent"

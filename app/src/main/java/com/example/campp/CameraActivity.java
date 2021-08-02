@@ -247,7 +247,7 @@ public class CameraActivity extends AppCompatActivity {
 
     void goToOther(){
         counter ++;
-        counter = 6;
+//        counter = 6;
         if (counter <= 5) {
             Intent intent;
             if (counter == 2 || counter == 4){
@@ -265,26 +265,34 @@ public class CameraActivity extends AppCompatActivity {
             String p1 = mPrefs.getString("p1", "empty");
             String p2 = mPrefs.getString("p2", "empty");
             String p3 = mPrefs.getString("p3", "empty");
+            String s1 = mPrefs.getString("s1", "F");
+            String s2 = mPrefs.getString("s2", "F");
+            String s3 = mPrefs.getString("s3", "F");
 
-            if (p1.equals("empty")){
-                p1 = pathToDir;
-            } else if (p2.equals("empty")) {
-                p2 = pathToDir;
-            } else if (p3.equals("empty")){
-                p3 = pathToDir;
-            } else {
-                p1 = p2;
-                p2 = p3;
-                p3 = pathToDir;
+            // Delete oldest test
+            if (!p3.equals("empty")){
+                File folderToDelete = new File(p3);
+                DeleteRecursive(folderToDelete);
+                Log.d("pathtopic", "Last folder deleted.");
             }
+
+            p3 = p2;
+            p2 = p1;
+            p1 = pathToDir;
+
+            s3 = s2;
+            s2 = s1;
+            s1 = "F";
 
             SharedPreferences.Editor mEditor = mPrefs.edit();
             mEditor.putString("p1", p1).commit();
             mEditor.putString("p2", p2).commit();
             mEditor.putString("p3", p3).commit();
+            mEditor.putString("s1", s1).commit();
+            mEditor.putString("s2", s2).commit();
+            mEditor.putString("s3", s3).commit();
 
             runOnUiThread(this::finishAlert);
-
         }
 
     }
@@ -300,4 +308,19 @@ public class CameraActivity extends AppCompatActivity {
         AlertDialog alert = builder.create();
         alert.show();
     }
+
+    private void DeleteRecursive(File fileOrDirectory) {
+        if (fileOrDirectory.isDirectory())
+            for (File child : fileOrDirectory.listFiles()) {
+                child.delete();
+                DeleteRecursive(child);
+            }
+        fileOrDirectory.delete();
+    }
+
+    @Override
+    public void onBackPressed () {
+
+    }
+
 }
