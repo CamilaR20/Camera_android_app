@@ -12,7 +12,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="32dp"
         android:layout_marginEnd="32dp"
-        android:text="Presione continuar cuando esté listo para grabar el movimiento con la mano derecha."
+        android:text="Presione continuar cuando esté listo para grabar el movimiento con la mano derecha o presione repetir si quiere volver a grabar el movimiento con la mano izquierda."
         android:textAlignment="center"
         android:textAppearance="@style/TextAppearance.AppCompat.Large"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -31,5 +31,17 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView3" />
+
+    <Button
+        android:id="@+id/button5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:onClick="goBack"
+        android:text="Repetir"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/button4" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
