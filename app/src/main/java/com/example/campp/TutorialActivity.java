@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.MediaController;
 import android.widget.VideoView;
 
@@ -21,6 +22,14 @@ public class TutorialActivity extends AppCompatActivity {
 
         pathToDir = getIntent().getStringExtra("directory");
         counter = getIntent().getIntExtra("counter", 1);
+
+        // Disable repeat button if test has just started
+        Button btn_repeat = findViewById(R.id.button_repeat);
+        if (counter == 0) {
+            btn_repeat.setEnabled(false);
+        } else {
+            btn_repeat.setEnabled(true);
+        }
 
         // Set tutorial video on video view
         VideoView tutorialView = findViewById(R.id.tutorialView);
@@ -48,5 +57,17 @@ public class TutorialActivity extends AppCompatActivity {
         intent.putExtra("directory", pathToDir);
         intent.putExtra("counter", counter);
         startActivity(intent);
+    }
+
+    public void goBack(View view) {
+        Intent intent = new Intent(this, CameraActivity.class);
+        intent.putExtra("directory", pathToDir);
+        intent.putExtra("counter", counter - 1);
+        startActivity(intent);
+    }
+
+    @Override
+    public void onBackPressed () {
+
     }
 }
