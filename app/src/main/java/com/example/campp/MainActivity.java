@@ -5,15 +5,29 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+
 public class MainActivity extends AppCompatActivity {
     private int selectedPosition = 0;
     private String[] paths = {"empty", "empty", "empty"};
     private String[] sent_status = {"F", "F", "F"};
+
+    private FirebaseStorage storage = FirebaseStorage.getInstance();
 
 
     @Override
@@ -93,6 +107,17 @@ public class MainActivity extends AppCompatActivity {
     public void sendToCloud(View view){
         // Send folder contents to cloud
         String pathToDir = paths[selectedPosition];
+
+        // Firebase path
+        String test_info = paths[selectedPosition].substring(paths[selectedPosition].length() - 21);
+        String firebasedir = test_info.substring(0, 4) + "/" + test_info.substring(5, 18) + "/";
+        String firebasepath = firebasedir + "pic.png";
+
+        // Send to Firebase
+        StorageReference fileRef = storage.getReference(firebasepath);
+        File f = new File(pathToDir + "/ft_l.jpg");
+        Uri file = Uri.fromFile(f);
+        UploadTask uploadTask = fileRef.putFile(file);
 
         // Check item that was sent(if successful)
         sent_status[selectedPosition] = "T";
