@@ -53,19 +53,20 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView">
+
         <ListView
             android:id="@+id/testsList"
-            android:layout_height="wrap_content"
             android:layout_width="0dp"
+            android:layout_height="match_parent"
             android:layout_weight="0.8"
-            android:background="#2000BCD4"/>
+            android:background="#2000BCD4" />
 
         <ListView
             android:id="@+id/statusList"
-            android:layout_height="wrap_content"
-            android:background="#2000BCD4"
             android:layout_width="0dp"
-            android:layout_weight="0.2"/>
+            android:layout_height="match_parent"
+            android:layout_weight="0.2"
+            android:background="#2000BCD4" />
     </LinearLayout>
 
 
