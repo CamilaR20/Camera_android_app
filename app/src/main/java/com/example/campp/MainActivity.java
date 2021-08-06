@@ -1,26 +1,33 @@
 package com.example.campp;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
+import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
-import java.io.ByteArrayOutputStream;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public class MainActivity extends AppCompatActivity {
     private int selectedPosition = 0;
@@ -105,23 +112,50 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void sendToCloud(View view){
+        Button sendBtn = findViewById(R.id.button_send);
+        sendBtn.setEnabled(false);
         // Send folder contents to cloud
         String pathToDir = paths[selectedPosition];
 
         // Firebase path
         String test_info = paths[selectedPosition].substring(paths[selectedPosition].length() - 21);
         String firebasedir = test_info.substring(0, 4) + "/" + test_info.substring(5, 18) + "/";
-        String firebasepath = firebasedir + "pic.png";
+        String firebasepath = firebasedir + "test.zip";
 
         // Send to Firebase
-        StorageReference fileRef = storage.getReference(firebasepath);
-        File f = new File(pathToDir + "/ft_l.jpg");
-        Uri file = Uri.fromFile(f);
-        UploadTask uploadTask = fileRef.putFile(file);
-
-        // Check item that was sent(if successful)
-        sent_status[selectedPosition] = "T";
-        modifyStatus();
+        // Check if zip file exists
+        File zipFile = new File(pathToDir + "/test.zip");
+        String zipStatus = "Success";
+        if (!zipFile.exists()){
+            zipStatus = zip(pathToDir);
+        }
+        // if zip exists or folder was zipped succesfully, then send to cloud
+        if (zipStatus.equals("Success")) {
+            StorageReference fileRef = storage.getReference(firebasepath);
+            File f = new File(pathToDir + "/test.zip");
+            Uri file = Uri.fromFile(f);
+            UploadTask uploadTask = fileRef.putFile(file);
+            uploadTask.addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception exception) {
+                    // Handle unsuccessful uploads
+                    Toast.makeText(MainActivity.this, "Error al enviar la prueba. Intente más tarde.", Toast.LENGTH_SHORT).show();
+                    sendBtn.setEnabled(true);
+                }
+            }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                @Override
+                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                    // taskSnapshot.getMetadata() contains file metadata such as size, content-type, etc.
+                    Toast.makeText(MainActivity.this, "Prueba enviada exitosamente.", Toast.LENGTH_SHORT).show();
+                    sent_status[selectedPosition] = "T";
+                    modifyStatus();
+                    sendBtn.setEnabled(true);
+                }
+            });
+        } else {
+            Toast.makeText(MainActivity.this, "Error al comprimir los archivos de la prueba.", Toast.LENGTH_SHORT).show();
+            sendBtn.setEnabled(true);
+        }
     }
 
     public void goToInstructions(View view){
@@ -134,5 +168,43 @@ public class MainActivity extends AppCompatActivity {
 //        Intent intent = new Intent(this, CameraActivity.class);
         Intent intent = new Intent(this, InstructionsActivity.class);
         startActivity(intent);
+    }
+
+    private String zip(String pathToDir) {
+        final int BUFFER = 2048;
+        File dir = new File(pathToDir);
+        File[] listFiles = dir.listFiles();
+        String zipFileName = pathToDir + "/test.zip";
+        try {
+            BufferedInputStream origin;
+            FileOutputStream dest = new FileOutputStream(zipFileName);
+            ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(
+                    dest));
+            byte[] data = new byte[BUFFER];
+
+            for (File child : listFiles) {
+                Log.d("Compress", "Adding: " + child.toString());
+                FileInputStream fi = new FileInputStream(child);
+                origin = new BufferedInputStream(fi, BUFFER);
+
+                String childPath = child.getAbsolutePath();
+                ZipEntry entry = new ZipEntry(childPath.substring(childPath.lastIndexOf("/") + 1));
+                out.putNextEntry(entry);
+                int count;
+
+                while ((count = origin.read(data, 0, BUFFER)) != -1) {
+                    out.write(data, 0, count);
+                }
+                origin.close();
+            }
+
+            out.close();
+            Log.d("Compress", "Compressing success");
+            return "Success";
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.d("Compress", "Compressing error");
+            return "Error";
+        }
     }
 }
