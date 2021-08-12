@@ -76,7 +76,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:layout_weight="0.2"
-        android:onClick="sendToCloud"
+        android:onClick="checkUserSignedIn"
         android:text="Enviar prueba"
         android:textAppearance="@style/TextAppearance.AppCompat.Large"
         app:layout_constraintEnd_toEndOf="parent"

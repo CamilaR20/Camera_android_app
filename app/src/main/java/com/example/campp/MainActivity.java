@@ -1,7 +1,9 @@
 package com.example.campp;
 
+import androidx.activity.result.ActivityResultCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.result.ActivityResultLauncher;
 
 import android.content.Context;
 import android.content.Intent;
@@ -9,14 +11,24 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.firebase.ui.auth.AuthUI;
+import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract;
+import com.firebase.ui.auth.IdpResponse;
+import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -26,21 +38,40 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.util.Arrays;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class MainActivity extends AppCompatActivity {
+    // Use pre-built ui
+    private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
+            new FirebaseAuthUIActivityResultContract(),
+            new ActivityResultCallback<FirebaseAuthUIAuthenticationResult>() {
+                @Override
+                public void onActivityResult(FirebaseAuthUIAuthenticationResult result) {
+                    onSignInResult(result);
+                }
+            }
+    );
+
     private int selectedPosition = 0;
     private String[] paths = {"empty", "empty", "empty"};
     private String[] sent_status = {"F", "F", "F"};
 
+    private FirebaseAuth mAuth;
     private FirebaseStorage storage = FirebaseStorage.getInstance();
+
+    private MenuItem signoutBtn;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Initialize Firebase Auth
+        mAuth = FirebaseAuth.getInstance();
 
         // Get path to last tests and sent status
         SharedPreferences mPrefs = getSharedPreferences("lastTests", Context.MODE_PRIVATE);
@@ -111,7 +142,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void sendToCloud(View view){
+    private void sendToCloud(){
         Button sendBtn = findViewById(R.id.button_send);
         sendBtn.setEnabled(false);
         // Send folder contents to cloud
@@ -207,4 +238,74 @@ public class MainActivity extends AppCompatActivity {
             return "Error";
         }
     }
+
+    private void onSignInResult(FirebaseAuthUIAuthenticationResult result) {
+        IdpResponse response = result.getIdpResponse();
+        if (result.getResultCode() == RESULT_OK) {
+            // Successfully signed in
+            Toast.makeText(MainActivity.this, "Inicio de sesión exitoso.", Toast.LENGTH_SHORT).show();
+            sendToCloud();
+            signoutBtn.setVisible(true);
+            // ...
+        } else {
+            Toast.makeText(MainActivity.this, "Debe iniciar sesión para enviar prubas a la nube.", Toast.LENGTH_SHORT).show();
+            // Sign in failed. If response is null the user canceled the
+            // sign-in flow using the back button. Otherwise check
+            // response.getError().getErrorCode() and handle the error.
+            // ...
+        }
+    }
+
+    public void checkUserSignedIn(View view){
+        // Check if user is signed in (non-null) and update UI accordingly.
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if(currentUser == null){
+            // Choose authentication providers
+            List<AuthUI.IdpConfig> providers = Arrays.asList(
+                    new AuthUI.IdpConfig.EmailBuilder().build());
+
+            // Create and launch sign-in intent
+            Intent signInIntent = AuthUI.getInstance()
+                    .createSignInIntentBuilder()
+                    .setAvailableProviders(providers)
+                    .build();
+            signInLauncher.launch(signInIntent);
+        } else {
+            sendToCloud();
+        }
+    }
+
+    // Create an action bar button to sign out
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // R.menu.mymenu is a reference to an xml file named mymenu.xml which should be inside your res/menu directory.
+        // If you don't have res/menu, just create a directory named "menu" inside res
+        getMenuInflater().inflate(R.menu.altmenu, menu);
+        signoutBtn = menu.findItem(R.id.signoutBtn);
+        // Check if user is signed in
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        if(currentUser == null){
+            signoutBtn.setVisible(false);
+        } else {
+            signoutBtn.setVisible(true);
+        }
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    // Handle SignOut button activities
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.signoutBtn) {
+            AuthUI.getInstance()
+                    .signOut(this)
+                    .addOnCompleteListener(new OnCompleteListener<Void>() {
+                        public void onComplete(@NonNull Task<Void> task) {
+                            signoutBtn.setVisible(false);
+                        }
+                    });
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
 }
