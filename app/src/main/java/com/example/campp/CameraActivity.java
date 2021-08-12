@@ -41,7 +41,7 @@ import java.util.concurrent.Executors;
 
 public class CameraActivity extends AppCompatActivity {
     // Variables, Objects
-    private final String[] FILE_NAMES =  new String[]{"ft_l", "ft_r", "ps_l", "ps_r", "oc_l" , "oc_r"};
+    private final String[] FILE_NAMES =  new String[]{"fingertap_l", "fingertap_r", "pronosup_l", "pronosup_r", "fist_l" , "fist_r"};
     private final String[] MOVEMENT_NAMES =  new String[]{"Golpeteo de dedos\nMano izquierda",
             "Golpeteo de dedos\nMano derecha", "Prono-supinación\nMano izquierda", "Prono-supinación\nMano derecha",
             "Cierre de puño\nMano izquierda" , "Cierre de puño\nMano derecha"};
@@ -247,7 +247,7 @@ public class CameraActivity extends AppCompatActivity {
 
     void goToOther(){
         counter ++;
-//        counter = 6;
+        counter = 6;
         if (counter <= 5) {
             Intent intent;
             if (counter == 2 || counter == 4){
