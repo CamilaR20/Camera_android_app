@@ -8,10 +8,13 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.MediaController;
+import android.widget.TextView;
 import android.widget.VideoView;
 
 
 public class TutorialActivity extends AppCompatActivity {
+    private final String[] MOVEMENT_NAMES =  new String[]{"Golpeteo de dedos", "Golpeteo de dedos",
+            "Prono-supinación", "Prono-supinación", "Cierre de puño", "Cierre de puño"};
     private String pathToDir;
     private Integer counter;
 
@@ -22,6 +25,10 @@ public class TutorialActivity extends AppCompatActivity {
 
         pathToDir = getIntent().getStringExtra("directory");
         counter = getIntent().getIntExtra("counter", 1);
+
+        // Textview that shows which movement
+        TextView movTxt = findViewById(R.id.textTitle);
+        movTxt.setText(MOVEMENT_NAMES[counter]);
 
         // Disable repeat button if test has just started
         Button btn_repeat = findViewById(R.id.button_repeat);
