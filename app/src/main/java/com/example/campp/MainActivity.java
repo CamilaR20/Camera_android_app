@@ -1,9 +1,7 @@
 package com.example.campp;
 
-import androidx.activity.result.ActivityResultCallback;
-import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.activity.result.ActivityResultLauncher;
 
 import android.content.Context;
 import android.content.Intent;
@@ -11,22 +9,17 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import com.firebase.ui.auth.AuthUI;
-import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract;
-import com.firebase.ui.auth.IdpResponse;
-import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.storage.FirebaseStorage;
@@ -38,31 +31,20 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.Arrays;
-import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class MainActivity extends AppCompatActivity {
-    // Use pre-built ui
-    private final ActivityResultLauncher<Intent> signInLauncher = registerForActivityResult(
-            new FirebaseAuthUIActivityResultContract(),
-            new ActivityResultCallback<FirebaseAuthUIAuthenticationResult>() {
-                @Override
-                public void onActivityResult(FirebaseAuthUIAuthenticationResult result) {
-                    onSignInResult(result);
-                }
-            }
-    );
 
     private int selectedPosition = 0;
     private String[] paths = {"empty", "empty", "empty"};
     private String[] sent_status = {"F", "F", "F"};
 
     private FirebaseAuth mAuth;
-    private FirebaseStorage storage = FirebaseStorage.getInstance();
+    private FirebaseStorage storage;
 
     private MenuItem signoutBtn;
+    private TextView textUser;
 
 
     @Override
@@ -72,6 +54,9 @@ public class MainActivity extends AppCompatActivity {
 
         // Initialize Firebase Auth
         mAuth = FirebaseAuth.getInstance();
+        textUser = findViewById(R.id.textViewUser);
+        // Initialize Firebase storage
+        storage = FirebaseStorage.getInstance();
 
         // Get path to last tests and sent status
         SharedPreferences mPrefs = getSharedPreferences("lastTests", Context.MODE_PRIVATE);
@@ -114,9 +99,7 @@ public class MainActivity extends AppCompatActivity {
         modifyStatus();
 
         // When test is selected to be sent background color changes
-        listView.setOnItemClickListener((parent, view, position, id) -> {
-            selectedPosition = position;
-        });
+        listView.setOnItemClickListener((parent, view, position, id) -> selectedPosition = position);
     }
 
     // Get info stored in the paths of tests
@@ -139,7 +122,6 @@ public class MainActivity extends AppCompatActivity {
         for (int i=0; i<3; i++){
             listView.setItemChecked(i, sent_status[i].equals("T"));
         }
-
     }
 
     private void sendToCloud(){
@@ -166,22 +148,16 @@ public class MainActivity extends AppCompatActivity {
             File f = new File(pathToDir + "/test.zip");
             Uri file = Uri.fromFile(f);
             UploadTask uploadTask = fileRef.putFile(file);
-            uploadTask.addOnFailureListener(new OnFailureListener() {
-                @Override
-                public void onFailure(@NonNull Exception exception) {
-                    // Handle unsuccessful uploads
-                    Toast.makeText(MainActivity.this, "Error al enviar la prueba. Intente más tarde.", Toast.LENGTH_SHORT).show();
-                    sendBtn.setEnabled(true);
-                }
-            }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                @Override
-                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                    // taskSnapshot.getMetadata() contains file metadata such as size, content-type, etc.
-                    Toast.makeText(MainActivity.this, "Prueba enviada exitosamente.", Toast.LENGTH_SHORT).show();
-                    sent_status[selectedPosition] = "T";
-                    modifyStatus();
-                    sendBtn.setEnabled(true);
-                }
+            uploadTask.addOnFailureListener(exception -> {
+                // Handle unsuccessful uploads
+                Toast.makeText(MainActivity.this, "Error al enviar la prueba. Intente más tarde.", Toast.LENGTH_SHORT).show();
+                sendBtn.setEnabled(true);
+            }).addOnSuccessListener(taskSnapshot -> {
+                // taskSnapshot.getMetadata() contains file metadata such as size, content-type, etc.
+                Toast.makeText(MainActivity.this, "Prueba enviada exitosamente.", Toast.LENGTH_SHORT).show();
+                sent_status[selectedPosition] = "T";
+                modifyStatus();
+                sendBtn.setEnabled(true);
             });
         } else {
             Toast.makeText(MainActivity.this, "Error al comprimir los archivos de la prueba.", Toast.LENGTH_SHORT).show();
@@ -239,38 +215,15 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void onSignInResult(FirebaseAuthUIAuthenticationResult result) {
-        IdpResponse response = result.getIdpResponse();
-        if (result.getResultCode() == RESULT_OK) {
-            // Successfully signed in
-            Toast.makeText(MainActivity.this, "Inicio de sesión exitoso.", Toast.LENGTH_SHORT).show();
-            sendToCloud();
-            signoutBtn.setVisible(true);
-            // ...
-        } else {
-            Toast.makeText(MainActivity.this, "Debe iniciar sesión para enviar prubas a la nube.", Toast.LENGTH_SHORT).show();
-            // Sign in failed. If response is null the user canceled the
-            // sign-in flow using the back button. Otherwise check
-            // response.getError().getErrorCode() and handle the error.
-            // ...
-        }
-    }
-
+    // When send to cloud button is pressed it first checks if user is signed in
     public void checkUserSignedIn(View view){
         // Check if user is signed in (non-null) and update UI accordingly.
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if(currentUser == null){
-            // Choose authentication providers
-            List<AuthUI.IdpConfig> providers = Arrays.asList(
-                    new AuthUI.IdpConfig.EmailBuilder().build());
-
-            // Create and launch sign-in intent
-            Intent signInIntent = AuthUI.getInstance()
-                    .createSignInIntentBuilder()
-                    .setAvailableProviders(providers)
-                    .build();
-            signInLauncher.launch(signInIntent);
+            signInDialog();
         } else {
+            String email = currentUser.getEmail();
+            textUser.setText("Sesión iniciada como: " + email);
             sendToCloud();
         }
     }
@@ -285,10 +238,12 @@ public class MainActivity extends AppCompatActivity {
         // Check if user is signed in
         FirebaseUser currentUser = mAuth.getCurrentUser();
         if(currentUser == null){
-            signoutBtn.setVisible(false);
+            textUser.setText("No hay ninguna sesión activa.");
         } else {
-            signoutBtn.setVisible(true);
+            String email = currentUser.getEmail();
+            textUser.setText("Sesión iniciada como: " + email);
         }
+        signoutBtn.setVisible(currentUser != null);
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -297,15 +252,56 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.signoutBtn) {
-            AuthUI.getInstance()
-                    .signOut(this)
-                    .addOnCompleteListener(new OnCompleteListener<Void>() {
-                        public void onComplete(@NonNull Task<Void> task) {
-                            signoutBtn.setVisible(false);
-                        }
-                    });
+            mAuth.signOut();
+            signoutBtn.setVisible(false);
+            textUser.setText("No hay ninguna sesión activa.");
         }
         return super.onOptionsItemSelected(item);
     }
+
+    // Custom alert dialog for sign in
+    private void signInDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+        // Get the layout inflater
+        LayoutInflater inflater = LayoutInflater.from(getApplicationContext());
+
+        // Inflate and set the layout for the dialog
+        // Pass null as the parent view because its going in the dialog layout
+        View prompt = inflater.inflate(R.layout.dialog_signin, null);
+        final EditText emailtxt = prompt.findViewById(R.id.username);
+        final EditText pswdtxt = prompt.findViewById(R.id.password);
+        builder.setView(prompt).setCancelable(false)
+                // Add action buttons
+                .setPositiveButton("Iniciar sesión", (dialog, id) -> {
+                    // sign in the user
+                    final String email = emailtxt.getText().toString();
+                    final String pswd = pswdtxt.getText().toString();
+                    signInUser(email, pswd);
+                })
+                .setNegativeButton("Cancelar", (dialog, id) -> Toast.makeText(MainActivity.this, "Debe iniciar sesión para enviar pruebas a la nube.", Toast.LENGTH_SHORT).show());
+        AlertDialog alert = builder.create();
+        alert.show();
+    }
+
+    private void signInUser(String email, String pswd){
+        mAuth.signInWithEmailAndPassword(email, pswd)
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        // Sign in success, update UI with the signed-in user's information
+                        Log.d("SignIn", "signInWithEmail:success");
+                        FirebaseUser currentUser = mAuth.getCurrentUser();
+                        String email1 = currentUser.getEmail();
+                        Toast.makeText(MainActivity.this, "Inicio de sesión exitoso.", Toast.LENGTH_SHORT).show();
+                        signoutBtn.setVisible(true);
+                        textUser.setText("Sesión iniciada como: " + email1);
+                        sendToCloud();
+                    } else {
+                        // If sign in fails, display a message to the user.
+                        Log.d("SignIn", "signInWithEmail:failure", task.getException());
+                        Toast.makeText(MainActivity.this, "Error de autenticación.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
 
 }
