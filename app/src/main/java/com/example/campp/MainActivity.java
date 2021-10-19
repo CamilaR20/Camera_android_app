@@ -81,8 +81,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // List of last tests
-        ArrayAdapter adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_checked, testsNames);
+//        ArrayAdapter adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_checked, testsNames);
 
+        MySimpleArrayAdapter adapter = new MySimpleArrayAdapter(this, android.R.layout.simple_list_item_checked, testsNames);
         ListView listView = findViewById(R.id.testsList);
         listView.setAdapter(adapter);
         listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
@@ -318,5 +319,26 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
+}
 
+class MySimpleArrayAdapter extends ArrayAdapter<String> {
+    private final Context context;
+    private final String[] values;
+
+    public MySimpleArrayAdapter(Context context,int textViewResourceId, String[] values) {
+        super(context, textViewResourceId, values);
+        this.context = context;
+        this.values = values;
+    }
+
+    @Override
+
+    public int getViewTypeCount() {
+        return getCount();
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return position;
+    }
 }
