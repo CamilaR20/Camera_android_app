@@ -9,6 +9,7 @@ import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
 import androidx.camera.core.VideoCapture;
+import androidx.camera.core.impl.CaptureConfig;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
@@ -23,9 +24,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.util.Log;
-import android.view.Display;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -158,12 +157,7 @@ public class CameraActivity extends AppCompatActivity {
         PreviewView previewView = findViewById(R.id.previewView);
         preview.setSurfaceProvider(previewView.getSurfaceProvider());
 
-        Display display = ((WindowManager) getSystemService(WINDOW_SERVICE)).getDefaultDisplay();
-
-        imageCapture =
-                new ImageCapture.Builder()
-                        .setTargetRotation(display.getRotation())
-                        .build();
+        imageCapture = new ImageCapture.Builder().build();
         videoCapture = new VideoCapture.Builder().build();
         cameraProvider.unbindAll();
         cameraProvider.bindToLifecycle(this, cameraSelector, imageCapture, videoCapture, preview);
@@ -247,7 +241,7 @@ public class CameraActivity extends AppCompatActivity {
 
     void goToOther(){
         counter ++;
-        counter = 6;
+//        counter = 6;
         if (counter <= 5) {
             Intent intent;
             if (counter == 2 || counter == 4){
@@ -261,37 +255,40 @@ public class CameraActivity extends AppCompatActivity {
             startActivity(intent);
         } else {
             // Save path of last test and delete path to older one
+            int nRecords = 15;
+            String[] pathName = {"p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10",
+                    "p11", "p12", "p13", "p14", "p15"};
+            String[] paths = {"vacío", "vacío", "vacío", "vacío", "vacío", "vacío", "vacío",
+                    "vacío", "vacío", "vacío", "vacío", "vacío", "vacío", "vacío", "vacío"};
+            String[] sentStatusName = {"s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10",
+                    "s11", "s12", "s13", "s14", "s15"};
+            String[] sent_status = {"F", "F", "F", "F", "F", "F", "F", "F", "F", "F", "F", "F",
+                    "F", "F", "F"};
+
+            // Get paths and sent status of saved tests
             SharedPreferences mPrefs = getSharedPreferences("lastTests", Context.MODE_PRIVATE);
-            String p1 = mPrefs.getString("p1", "empty");
-            String p2 = mPrefs.getString("p2", "empty");
-            String p3 = mPrefs.getString("p3", "empty");
-            String s1 = mPrefs.getString("s1", "F");
-            String s2 = mPrefs.getString("s2", "F");
-            String s3;
 
             // Delete oldest test
-            if (!p3.equals("empty")){
-                File folderToDelete = new File(p3);
+            String oldestPath = mPrefs.getString(pathName[nRecords-1], "vacío");
+            if (!oldestPath.equals("vacío")){
+                File folderToDelete = new File(oldestPath);
                 DeleteRecursive(folderToDelete);
                 Log.d("pathtopic", "Last folder deleted.");
             }
 
-            p3 = p2;
-            p2 = p1;
-            p1 = pathToDir;
-
-            s3 = s2;
-            s2 = s1;
-            s1 = "F";
+            // Add new test path to saved paths and update accordingly
+            paths[0] = pathToDir;
+            sent_status[0] = "F";
+            for (int i = nRecords - 1; i > 0; i--){
+                paths[i] = mPrefs.getString(pathName[i-1], "vacío");
+                sent_status[i] = mPrefs.getString(sentStatusName[i-1], "F");
+            }
 
             SharedPreferences.Editor mEditor = mPrefs.edit();
-            mEditor.putString("p1", p1).commit();
-            mEditor.putString("p2", p2).commit();
-            mEditor.putString("p3", p3).commit();
-            mEditor.putString("s1", s1).commit();
-            mEditor.putString("s2", s2).commit();
-            mEditor.putString("s3", s3).commit();
-
+            for (int i = 0; i < nRecords; i++){
+                mEditor.putString(pathName[i], paths[i]).commit();
+                mEditor.putString(sentStatusName[i], sent_status[i]).commit();
+            }
             runOnUiThread(this::finishAlert);
         }
 
@@ -322,5 +319,7 @@ public class CameraActivity extends AppCompatActivity {
     public void onBackPressed () {
 
     }
+
+
 
 }

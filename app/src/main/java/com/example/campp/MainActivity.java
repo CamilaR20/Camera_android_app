@@ -13,6 +13,7 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -37,8 +38,16 @@ import java.util.zip.ZipOutputStream;
 public class MainActivity extends AppCompatActivity {
 
     private int selectedPosition = 0;
-    private String[] paths = {"empty", "empty", "empty"};
-    private String[] sent_status = {"F", "F", "F"};
+    private TextView prevSelectedItem = null;
+    private int nRecords = 15;
+    private String[] pathName = {"p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10",
+            "p11", "p12", "p13", "p14", "p15"};
+    private String[] paths = {"vacío", "vacío", "vacío", "vacío", "vacío", "vacío", "vacío",
+            "vacío", "vacío", "vacío", "vacío", "vacío", "vacío", "vacío", "vacío"};
+    private String[] sentStatusName = {"s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10",
+            "s11", "s12", "s13", "s14", "s15"};
+    private String[] sent_status = {"F", "F", "F", "F", "F", "F", "F", "F", "F", "F", "F", "F",
+            "F", "F", "F"};
 
     private FirebaseAuth mAuth;
     private FirebaseStorage storage;
@@ -58,48 +67,45 @@ public class MainActivity extends AppCompatActivity {
         // Initialize Firebase storage
         storage = FirebaseStorage.getInstance();
 
-        // Get path to last tests and sent status
+        String[] testsNames = new String[15];
+        // Get path to last tests and sent status and get info from paths to show in readable format
         SharedPreferences mPrefs = getSharedPreferences("lastTests", Context.MODE_PRIVATE);
-        paths[0] = mPrefs.getString("p1", "empty");
-        paths[1] = mPrefs.getString("p2", "empty");
-        paths[2] = mPrefs.getString("p3", "empty");
-        sent_status[0] = mPrefs.getString("s1", "F");
-        sent_status[1] = mPrefs.getString("s2", "F");
-        sent_status[2] = mPrefs.getString("s3", "F");
-
-        // Get info from paths to show in readable format
-        String[] testsNames = new String[3];
-        if (paths[0].equals("empty")){
-            testsNames[0] = testsNames[1] = testsNames[2] = "empty";
-        } else if (paths[1].equals("empty")) {
-            testsNames[0] = getFormattedTxt(paths[0].substring(paths[0].length() - 21));
-            testsNames[1] = testsNames[2] = "empty";
-        } else if (paths[2].equals("empty")) {
-            testsNames[0] = getFormattedTxt(paths[0].substring(paths[0].length() - 21));
-            testsNames[1] = getFormattedTxt(paths[1].substring(paths[1].length() - 21));
-            testsNames[2] = "empty";
-        } else {
-            testsNames[0] = getFormattedTxt(paths[0].substring(paths[0].length() - 21));
-            testsNames[1] = getFormattedTxt(paths[1].substring(paths[1].length() - 21));
-            testsNames[2] = getFormattedTxt(paths[2].substring(paths[2].length() - 21));
+        for (int i = 0; i < nRecords; i++){
+            paths[i] = mPrefs.getString(pathName[i], "vacío");
+            sent_status[i] = mPrefs.getString(sentStatusName[i], "F");
+            if (paths[i].equals("vacío")){
+                testsNames[i] = "vacío";
+            } else {
+                testsNames[i] = getFormattedTxt(paths[i].substring(paths[i].length() - 21));
+            }
         }
 
         // List of last tests
-        ArrayAdapter adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_activated_1, testsNames);
+        ArrayAdapter adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_checked, testsNames);
+
         ListView listView = findViewById(R.id.testsList);
         listView.setAdapter(adapter);
-        listView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
-        // List that shows sent status of last tests
-        final String[] EMPTY = {"", "", ""};
-        ArrayAdapter adapter2 = new ArrayAdapter<>(this, android.R.layout.simple_list_item_checked, EMPTY);
-        ListView listView2 = findViewById(R.id.statusList);
-        listView2.setAdapter(adapter2);
-        listView2.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
-        listView2.setEnabled(false);
-        modifyStatus();
+        listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+        // When an item is selected modify bg color but not check mark
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                selectedPosition = position;
+                if (prevSelectedItem != null) {
+                    prevSelectedItem.setBackgroundColor(getResources().getColor(R.color.teal_100, getTheme()));
+                }
+                // Don´t change check, leave it according to sent_status
+                modifyStatus();
 
-        // When test is selected to be sent background color changes
-        listView.setOnItemClickListener((parent, view, position, id) -> selectedPosition = position);
+                // Change bg color of currently selected item
+                TextView currentSelectedItem = (TextView) view;
+                currentSelectedItem.setBackgroundColor(getResources().getColor(R.color.teal_200, getTheme()));
+
+                prevSelectedItem = currentSelectedItem;
+            }
+        });
+
+        modifyStatus();
     }
 
     // Get info stored in the paths of tests
@@ -118,8 +124,8 @@ public class MainActivity extends AppCompatActivity {
 
     // Modify listview check, that indicates if test has been sent to the cloud
     private void modifyStatus() {
-        ListView listView = findViewById(R.id.statusList);
-        for (int i=0; i<3; i++){
+        ListView listView = findViewById(R.id.testsList);
+        for (int i=0; i<nRecords; i++){
             listView.setItemChecked(i, sent_status[i].equals("T"));
         }
     }
@@ -130,38 +136,47 @@ public class MainActivity extends AppCompatActivity {
         // Send folder contents to cloud
         String pathToDir = paths[selectedPosition];
 
-        // Firebase path
-        String test_info = paths[selectedPosition].substring(paths[selectedPosition].length() - 21);
-        String firebasedir = test_info.substring(0, 4) + "/" + test_info.substring(5, 18) + "/";
-        String firebasepath = firebasedir + "test.zip";
-
-        // Send to Firebase
-        // Check if zip file exists
-        File zipFile = new File(pathToDir + "/test.zip");
-        String zipStatus = "Success";
-        if (!zipFile.exists()){
-            zipStatus = zip(pathToDir);
-        }
-        // if zip exists or folder was zipped succesfully, then send to cloud
-        if (zipStatus.equals("Success")) {
-            StorageReference fileRef = storage.getReference(firebasepath);
-            File f = new File(pathToDir + "/test.zip");
-            Uri file = Uri.fromFile(f);
-            UploadTask uploadTask = fileRef.putFile(file);
-            uploadTask.addOnFailureListener(exception -> {
-                // Handle unsuccessful uploads
-                Toast.makeText(MainActivity.this, "Error al enviar la prueba. Intente más tarde.", Toast.LENGTH_SHORT).show();
-                sendBtn.setEnabled(true);
-            }).addOnSuccessListener(taskSnapshot -> {
-                // taskSnapshot.getMetadata() contains file metadata such as size, content-type, etc.
-                Toast.makeText(MainActivity.this, "Prueba enviada exitosamente.", Toast.LENGTH_SHORT).show();
-                sent_status[selectedPosition] = "T";
-                modifyStatus();
-                sendBtn.setEnabled(true);
-            });
-        } else {
-            Toast.makeText(MainActivity.this, "Error al comprimir los archivos de la prueba.", Toast.LENGTH_SHORT).show();
+        if (pathToDir.equals("vacío")){
+            Toast.makeText(MainActivity.this, "No se puede enviar prueba vacía.", Toast.LENGTH_SHORT).show();
             sendBtn.setEnabled(true);
+        } else {
+            // Firebase path
+            String test_info = paths[selectedPosition].substring(paths[selectedPosition].length() - 21);
+            String firebasedir = test_info.substring(0, 4) + "/" + test_info.substring(5, 21) + "/";
+            String firebasepath = firebasedir + "test.zip";
+
+            // Send to Firebase
+            // Check if zip file exists
+            File zipFile = new File(pathToDir + "/test.zip");
+            String zipStatus = "Success";
+            if (!zipFile.exists()) {
+                zipStatus = zip(pathToDir);
+            }
+            // if zip exists or folder was zipped succesfully, then send to cloud
+            if (zipStatus.equals("Success")) {
+                StorageReference fileRef = storage.getReference(firebasepath);
+                File f = new File(pathToDir + "/test.zip");
+                Uri file = Uri.fromFile(f);
+                UploadTask uploadTask = fileRef.putFile(file);
+                uploadTask.addOnFailureListener(exception -> {
+                    // Handle unsuccessful uploads
+                    Toast.makeText(MainActivity.this, "Error al enviar la prueba. Intente más tarde.", Toast.LENGTH_SHORT).show();
+                    sendBtn.setEnabled(true);
+                }).addOnSuccessListener(taskSnapshot -> {
+                    // taskSnapshot.getMetadata() contains file metadata such as size, content-type, etc.
+                    Toast.makeText(MainActivity.this, "Prueba enviada exitosamente.", Toast.LENGTH_SHORT).show();
+                    sent_status[selectedPosition] = "T";
+
+                    SharedPreferences mPrefs = getSharedPreferences("lastTests", Context.MODE_PRIVATE);
+                    SharedPreferences.Editor mEditor = mPrefs.edit();
+                    mEditor.putString(sentStatusName[selectedPosition], sent_status[selectedPosition]).commit();
+                    modifyStatus();
+                    sendBtn.setEnabled(true);
+                });
+            } else {
+                Toast.makeText(MainActivity.this, "Error al comprimir los archivos de la prueba.", Toast.LENGTH_SHORT).show();
+                sendBtn.setEnabled(true);
+            }
         }
     }
 
@@ -169,9 +184,9 @@ public class MainActivity extends AppCompatActivity {
         // Change sent status of items
         SharedPreferences mPrefs = getSharedPreferences("lastTests", Context.MODE_PRIVATE);
         SharedPreferences.Editor mEditor = mPrefs.edit();
-        mEditor.putString("s1", sent_status[0]).commit();
-        mEditor.putString("s2", sent_status[1]).commit();
-        mEditor.putString("s3", sent_status[2]).commit();
+        for (int i = 0; i < nRecords; i++){
+            mEditor.putString(sentStatusName[i], sent_status[i]).commit();
+        }
 //        Intent intent = new Intent(this, CameraActivity.class);
         Intent intent = new Intent(this, InstructionsActivity.class);
         startActivity(intent);
@@ -293,7 +308,7 @@ public class MainActivity extends AppCompatActivity {
                         String email1 = currentUser.getEmail();
                         Toast.makeText(MainActivity.this, "Inicio de sesión exitoso.", Toast.LENGTH_SHORT).show();
                         signoutBtn.setVisible(true);
-                        textUser.setText("Sesión iniciada como: " + email1);
+                        textUser.setText("Sesión iniciada como:\n" + email1);
                         sendToCloud();
                     } else {
                         // If sign in fails, display a message to the user.
