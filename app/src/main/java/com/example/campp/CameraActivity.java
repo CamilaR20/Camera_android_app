@@ -167,7 +167,7 @@ public class CameraActivity extends AppCompatActivity {
     void takePicture() {
         File picturePath = new File(directory, FILE_NAMES[counter] + ".jpg");
         // Print path to picture
-        Log.d("pathtopic", picturePath.getAbsolutePath());
+//        Log.d("pathtopic", picturePath.getAbsolutePath());
 
         // Capture and save image
         ImageCapture.OutputFileOptions outputFileOptions =
@@ -178,14 +178,14 @@ public class CameraActivity extends AppCompatActivity {
                     @Override
                     public void onImageSaved(ImageCapture.OutputFileResults outputFileResults) {
                         // Image path to send to other activity
-                        Log.d("pathtopic", "Image was saved");
+//                        Log.d("pathtopic", "Image was saved");
                         videoTimer.start();
                         takeVideo();
                     }
 
                     @Override
                     public void onError(ImageCaptureException error) {
-                        Log.d("pathtopic", "Image was not saved: ON ERROR TAKE PICTURE");
+//                        Log.d("pathtopic", "Image was not saved: ON ERROR TAKE PICTURE");
                         errorAlert("No fue posible guardar foto de calibración.");
                     }
                 }
@@ -197,7 +197,7 @@ public class CameraActivity extends AppCompatActivity {
     private void takeVideo() {
         File videoPath = new File(directory, FILE_NAMES[counter] + ".mp4");
         // Print path to picture
-        Log.d("pathtopic", videoPath.getAbsolutePath());
+//        Log.d("pathtopic", videoPath.getAbsolutePath());
 
         // Enable button to stop the recording
         runOnUiThread(() -> {
@@ -212,7 +212,7 @@ public class CameraActivity extends AppCompatActivity {
                     @Override
                     public void onVideoSaved(VideoCapture.OutputFileResults outputFileResults) {
                         // Image path to send to other activity
-                        Log.d("pathtopic", "Video was saved");
+//                        Log.d("pathtopic", "Video was saved");
                         goToOther();
                     }
 
@@ -270,10 +270,12 @@ public class CameraActivity extends AppCompatActivity {
 
             // Delete oldest test
             String oldestPath = mPrefs.getString(pathName[nRecords-1], "vacío");
-            if (!oldestPath.equals("vacío")){
-                File folderToDelete = new File(oldestPath);
-                DeleteRecursive(folderToDelete);
-                Log.d("pathtopic", "Last folder deleted.");
+            File folderToDelete = new File(oldestPath);
+            if (!oldestPath.equals("vacío")) {
+                if (folderToDelete.exists()){
+                    DeleteRecursive(folderToDelete);
+//                    Log.d("pathtopic", "Last folder deleted.");
+                }
             }
 
             // Add new test path to saved paths and update accordingly

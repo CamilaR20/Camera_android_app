@@ -150,9 +150,11 @@ public class MainActivity extends AppCompatActivity {
             // Check if zip file exists
             File zipFile = new File(pathToDir + "/test.zip");
             String zipStatus = "Success";
-            if (!zipFile.exists()) {
-                zipStatus = zip(pathToDir);
+            if (zipFile.exists()) {
+                zipFile.delete();
             }
+            zipStatus = zip(pathToDir);
+
             // if zip exists or folder was zipped succesfully, then send to cloud
             if (zipStatus.equals("Success")) {
                 StorageReference fileRef = storage.getReference(firebasepath);
@@ -206,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
             byte[] data = new byte[BUFFER];
 
             for (File child : listFiles) {
-                Log.d("Compress", "Adding: " + child.toString());
+//                Log.d("Compress", "Adding: " + child.toString());
                 FileInputStream fi = new FileInputStream(child);
                 origin = new BufferedInputStream(fi, BUFFER);
 
@@ -222,11 +224,11 @@ public class MainActivity extends AppCompatActivity {
             }
 
             out.close();
-            Log.d("Compress", "Compressing success");
+//            Log.d("Compress", "Compressing success");
             return "Success";
         } catch (Exception e) {
             e.printStackTrace();
-            Log.d("Compress", "Compressing error");
+//            Log.d("Compress", "Compressing error");
             return "Error";
         }
     }
@@ -304,7 +306,7 @@ public class MainActivity extends AppCompatActivity {
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
                         // Sign in success, update UI with the signed-in user's information
-                        Log.d("SignIn", "signInWithEmail:success");
+//                        Log.d("SignIn", "signInWithEmail:success");
                         FirebaseUser currentUser = mAuth.getCurrentUser();
                         String email1 = currentUser.getEmail();
                         Toast.makeText(MainActivity.this, "Inicio de sesión exitoso.", Toast.LENGTH_SHORT).show();
@@ -313,7 +315,7 @@ public class MainActivity extends AppCompatActivity {
                         sendToCloud();
                     } else {
                         // If sign in fails, display a message to the user.
-                        Log.d("SignIn", "signInWithEmail:failure", task.getException());
+//                        Log.d("SignIn", "signInWithEmail:failure", task.getException());
                         Toast.makeText(MainActivity.this, "Error de autenticación.", Toast.LENGTH_SHORT).show();
                     }
                 });
