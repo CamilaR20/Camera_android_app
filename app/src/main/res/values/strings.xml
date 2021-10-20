@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">campp</string>
+    <string name="instructions">Con Camapp podrá grabar videos para evaluar el progreso de la
+        enfermedad de Parkinson. Se grabarán un total de 6 videos  y se evaluarán 3 movimientos,
+        por cada movimiento se grabarán dos videos: uno de cada mano. \n</string>
+    <string name="instructions2">
+        Antes de la grabación de cada movimiento podrá observar el tutorial respectivo,
+        pasando por una etapa de calibración de 5 segundos en la que se captura una foto de la mano
+        y otra etapa donde se captura el video de la mano derecha. \n</string>
+    <string name="instructions3">Una vez terminado, aparecerá una pantalla de espera para continuar
+        con la mano izquierda, una vez esté listo, presione continuar. Repita este proceso para los
+        tres movimientos. \n</string>
 </resources>
