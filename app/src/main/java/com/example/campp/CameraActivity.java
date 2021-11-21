@@ -24,6 +24,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.util.Log;
+import android.util.Size;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -69,7 +70,7 @@ public class CameraActivity extends AppCompatActivity {
         }
     };
     // Calibration timer: to take calibration picture before each movement
-    private CountDownTimer calibrationTimer = new CountDownTimer(5000, 1000) {
+    private CountDownTimer calibrationTimer = new CountDownTimer(6000, 1000) {
         public void onTick(long millis) {
             TextView timerTxt = findViewById(R.id.textTimer); // TextView that shows timer count down
             timerTxt.setText("¿Preparado? " + millis / 1000 + " s");
@@ -157,8 +158,8 @@ public class CameraActivity extends AppCompatActivity {
         PreviewView previewView = findViewById(R.id.previewView);
         preview.setSurfaceProvider(previewView.getSurfaceProvider());
 
-        imageCapture = new ImageCapture.Builder().build();
-        videoCapture = new VideoCapture.Builder().build();
+        imageCapture = new ImageCapture.Builder().setTargetResolution(new Size(960, 540)).build();
+        videoCapture = new VideoCapture.Builder().setTargetResolution(new Size(960, 540)).build();
         cameraProvider.unbindAll();
         cameraProvider.bindToLifecycle(this, cameraSelector, imageCapture, videoCapture, preview);
     }
