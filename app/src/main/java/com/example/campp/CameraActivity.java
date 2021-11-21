@@ -158,9 +158,10 @@ public class CameraActivity extends AppCompatActivity {
         PreviewView previewView = findViewById(R.id.previewView);
         preview.setSurfaceProvider(previewView.getSurfaceProvider());
 
-        imageCapture = new ImageCapture.Builder().setTargetResolution(new Size(960, 540)).build();
-        videoCapture = new VideoCapture.Builder().setTargetResolution(new Size(960, 540)).build();
         cameraProvider.unbindAll();
+
+        imageCapture = new ImageCapture.Builder().setTargetResolution(new Size(540, 960)).build();
+        videoCapture = new VideoCapture.Builder().setTargetResolution(new Size(540, 960)).build();
         cameraProvider.bindToLifecycle(this, cameraSelector, imageCapture, videoCapture, preview);
     }
 
