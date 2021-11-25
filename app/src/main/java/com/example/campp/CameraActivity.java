@@ -58,8 +58,8 @@ public class CameraActivity extends AppCompatActivity {
     private File directory;
     private String pathToDir = "";
     private Integer counter;
-    // Video timer
-    private CountDownTimer videoTimer = new CountDownTimer(15000, 1000) {
+    // Video timer: maximum time to record each movement
+    private CountDownTimer videoTimer = new CountDownTimer(16000, 1000) {
         public void onTick(long millis) {
             TextView timerTxt = findViewById(R.id.textTimer); // TextView that shows timer count down
             timerTxt.setText("Grabando: " + millis / 1000 + " s");
@@ -76,7 +76,7 @@ public class CameraActivity extends AppCompatActivity {
             timerTxt.setText("¿Preparado? " + millis / 1000 + " s");
         }
         public void onFinish() {
-            // Captura foto de calibración e inicia timer de video
+            // Takes calibration picture and starts video timer
             takePicture();
             TextView statusTxt = findViewById(R.id.textStatus); // TextView that shows status
             statusTxt.setText("Calibrado!");
@@ -100,7 +100,7 @@ public class CameraActivity extends AppCompatActivity {
         Button finishBtn = findViewById(R.id.finish_btn); // Disable finish button until calibration picture is taken
         finishBtn.setEnabled(false);
 
-        Button readyBtn = findViewById(R.id.ready_btn);
+        Button readyBtn = findViewById(R.id.ready_btn); // Set ready button to be visible at the start
         readyBtn.setVisibility(View.VISIBLE);
 
         // Check permissions
@@ -177,8 +177,7 @@ public class CameraActivity extends AppCompatActivity {
     // To take calibration picture
     void takePicture() {
         File picturePath = new File(directory, FILE_NAMES[counter] + ".jpg");
-        // Print path to picture
-//        Log.d("pathtopic", picturePath.getAbsolutePath());
+        //Log.d("pathtopic", picturePath.getAbsolutePath());
 
         // Capture and save image
         ImageCapture.OutputFileOptions outputFileOptions =
@@ -188,26 +187,24 @@ public class CameraActivity extends AppCompatActivity {
                 new ImageCapture.OnImageSavedCallback() {
                     @Override
                     public void onImageSaved(ImageCapture.OutputFileResults outputFileResults) {
-                        // Image path to send to other activity
-//                        Log.d("pathtopic", "Image was saved");
+                        //Log.d("pathtopic", "Image was saved");
                         videoTimer.start();
                         takeVideo();
                     }
 
                     @Override
                     public void onError(ImageCaptureException error) {
-//                        Log.d("pathtopic", "Image was not saved: ON ERROR TAKE PICTURE");
+                        //Log.d("pathtopic", "Image was not saved: ON ERROR TAKE PICTURE");
                         errorAlert("No fue posible guardar foto de calibración.");
                     }
                 }
         );
     }
 
-    // To take video of movement
+    // To record video of movement
     @SuppressLint("RestrictedApi")
     private void takeVideo() {
         File videoPath = new File(directory, FILE_NAMES[counter] + ".mp4");
-        // Print path to picture
 //        Log.d("pathtopic", videoPath.getAbsolutePath());
 
         // Enable button to stop the recording
@@ -250,6 +247,7 @@ public class CameraActivity extends AppCompatActivity {
         alert.show();
     }
 
+    // Selects which activity to go to when recording finishes
     void goToOther(){
         counter ++;
 //        counter = 6;
