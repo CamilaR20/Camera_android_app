@@ -97,8 +97,11 @@ public class CameraActivity extends AppCompatActivity {
 
         directory = new File(pathToDir);
 
-        Button finishBtn = findViewById(R.id.finish_btn); // Disable finish button until calibration picture is
+        Button finishBtn = findViewById(R.id.finish_btn); // Disable finish button until calibration picture is taken
         finishBtn.setEnabled(false);
+
+        Button readyBtn = findViewById(R.id.ready_btn);
+        readyBtn.setVisibility(View.VISIBLE);
 
         // Check permissions
         if (allPermissionsGranted()) {
@@ -135,7 +138,6 @@ public class CameraActivity extends AppCompatActivity {
 
     // Try to access camera and configure it
     void startCamera() {
-        calibrationTimer.start();
         cameraProviderFuture = ProcessCameraProvider.getInstance(this);
         cameraProviderFuture.addListener(() -> {
             try {
@@ -163,6 +165,13 @@ public class CameraActivity extends AppCompatActivity {
         imageCapture = new ImageCapture.Builder().setTargetResolution(new Size(540, 960)).build();
         videoCapture = new VideoCapture.Builder().setTargetResolution(new Size(540, 960)).build();
         cameraProvider.bindToLifecycle(this, cameraSelector, imageCapture, videoCapture, preview);
+    }
+
+    // Starts calibration timer after button indicating person is ready is pressed
+    public void startTest(View view){
+        calibrationTimer.start();
+        Button readyBtn = findViewById(R.id.ready_btn);
+        readyBtn.setVisibility(View.GONE);
     }
 
     // To take calibration picture
