@@ -21,6 +21,7 @@ public class BreakActivity extends AppCompatActivity {
 
     }
 
+    // To record next video
     public void goToCamera(View view){
         Intent intent = new Intent(this, CameraActivity.class);
         intent.putExtra("directory", pathToDir);
@@ -28,14 +29,15 @@ public class BreakActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    // To repeat last video
     public void goBack(View view){
-        // To repeat
         Intent intent = new Intent(this, CameraActivity.class);
         intent.putExtra("directory", pathToDir);
         intent.putExtra("counter", counter - 1);
         startActivity(intent);
     }
 
+    // Don´t allow to go back from this screen
     @Override
     public void onBackPressed () {
 

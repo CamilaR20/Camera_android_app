@@ -8,7 +8,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
+//import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -39,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
 
     private int selectedPosition = 0;
     private TextView prevSelectedItem = null;
-    private int nRecords = 15;
+    private final int nRecords = 15;
     private String[] pathName = {"p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9", "p10",
             "p11", "p12", "p13", "p14", "p15"};
     private String[] paths = {"vacío", "vacío", "vacío", "vacío", "vacío", "vacío", "vacío",
@@ -70,10 +70,10 @@ public class MainActivity extends AppCompatActivity {
         String[] testsNames = new String[15];
         // Get path to last tests and sent status and get info from paths to show in readable format
         SharedPreferences mPrefs = getSharedPreferences("lastTests", Context.MODE_PRIVATE);
-        for (int i = 0; i < nRecords; i++){
+        for (int i = 0; i < nRecords; i++) {
             paths[i] = mPrefs.getString(pathName[i], "vacío");
             sent_status[i] = mPrefs.getString(sentStatusName[i], "F");
-            if (paths[i].equals("vacío")){
+            if (paths[i].equals("vacío")) {
                 testsNames[i] = "vacío";
             } else {
                 testsNames[i] = getFormattedTxt(paths[i].substring(paths[i].length() - 21));
@@ -81,41 +81,36 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // List of last tests
-//        ArrayAdapter adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_checked, testsNames);
-
         MySimpleArrayAdapter adapter = new MySimpleArrayAdapter(this, android.R.layout.simple_list_item_checked, testsNames);
         ListView listView = findViewById(R.id.testsList);
         listView.setAdapter(adapter);
         listView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
         // When an item is selected modify bg color but not check mark
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                selectedPosition = position;
-                if (prevSelectedItem != null) {
-                    prevSelectedItem.setBackgroundColor(getResources().getColor(R.color.teal_100, getTheme()));
-                }
-                // Don´t change check, leave it according to sent_status
-                modifyStatus();
-
-                // Change bg color of currently selected item
-                TextView currentSelectedItem = (TextView) view;
-                currentSelectedItem.setBackgroundColor(getResources().getColor(R.color.teal_200, getTheme()));
-
-                prevSelectedItem = currentSelectedItem;
+        listView.setOnItemClickListener((parent, view, position, id) -> {
+            selectedPosition = position;
+            if (prevSelectedItem != null) {
+                prevSelectedItem.setBackgroundColor(getResources().getColor(R.color.teal_100, getTheme()));
             }
+            // Don´t change check, leave it according to sent_status
+            modifyStatus();
+
+            // Change bg color of currently selected item
+            TextView currentSelectedItem = (TextView) view;
+            currentSelectedItem.setBackgroundColor(getResources().getColor(R.color.teal_200, getTheme()));
+
+            prevSelectedItem = currentSelectedItem;
         });
 
         modifyStatus();
     }
 
-    // Get info stored in the paths of tests
+    // Get info stored in the paths of tests to show in readable format
     private String getFormattedTxt(String txt) {
         String id = "ID: " + txt.substring(0, 4) + ", ";
         String date = "Fecha: " + txt.substring(5, 7) + "/" + txt.substring(7, 9) + "/" + txt.substring(9, 13) + ", ";
         String time = "Hora: " + txt.substring(14, 16) + ":" + txt.substring(16, 18) + ", ";
         String status;
-        if (txt.endsWith("F")){
+        if (txt.endsWith("F")) {
             status = "OFF";
         } else {
             status = "ON";
@@ -126,18 +121,20 @@ public class MainActivity extends AppCompatActivity {
     // Modify listview check, that indicates if test has been sent to the cloud
     private void modifyStatus() {
         ListView listView = findViewById(R.id.testsList);
-        for (int i=0; i<nRecords; i++){
+        for (int i = 0; i < nRecords; i++) {
             listView.setItemChecked(i, sent_status[i].equals("T"));
         }
     }
 
-    private void sendToCloud(){
+    // Send test to Firebase
+    private void sendToCloud() {
+        // Disable send button so this function can´t be triggered until it has finished
         Button sendBtn = findViewById(R.id.button_send);
         sendBtn.setEnabled(false);
-        // Send folder contents to cloud
+        // Path to selected test
         String pathToDir = paths[selectedPosition];
-
-        if (pathToDir.equals("vacío")){
+        // If test path is empty do not continue
+        if (pathToDir.equals("vacío")) {
             Toast.makeText(MainActivity.this, "No se puede enviar prueba vacía.", Toast.LENGTH_SHORT).show();
             sendBtn.setEnabled(true);
         } else {
@@ -149,11 +146,10 @@ public class MainActivity extends AppCompatActivity {
             // Send to Firebase
             // Check if zip file exists
             File zipFile = new File(pathToDir + "/test.zip");
-            String zipStatus = "Success";
             if (zipFile.exists()) {
                 zipFile.delete();
             }
-            zipStatus = zip(pathToDir);
+            String zipStatus = zip(pathToDir);
 
             // if zip exists or folder was zipped succesfully, then send to cloud
             if (zipStatus.equals("Success")) {
@@ -183,11 +179,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void goToInstructions(View view){
+    // When start test button is pressed go to next activity
+    public void goToInstructions(View view) {
         // Change sent status of items
         SharedPreferences mPrefs = getSharedPreferences("lastTests", Context.MODE_PRIVATE);
         SharedPreferences.Editor mEditor = mPrefs.edit();
-        for (int i = 0; i < nRecords; i++){
+        for (int i = 0; i < nRecords; i++) {
             mEditor.putString(sentStatusName[i], sent_status[i]).commit();
         }
 //        Intent intent = new Intent(this, CameraActivity.class);
@@ -195,6 +192,7 @@ public class MainActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    // Zip folder
     private String zip(String pathToDir) {
         final int BUFFER = 2048;
         File dir = new File(pathToDir);
@@ -234,10 +232,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // When send to cloud button is pressed it first checks if user is signed in
-    public void checkUserSignedIn(View view){
+    public void checkUserSignedIn(View view) {
         // Check if user is signed in (non-null) and update UI accordingly.
         FirebaseUser currentUser = mAuth.getCurrentUser();
-        if(currentUser == null){
+        if (currentUser == null) {
             signInDialog();
         } else {
             String email = currentUser.getEmail();
@@ -255,7 +253,7 @@ public class MainActivity extends AppCompatActivity {
         signoutBtn = menu.findItem(R.id.signoutBtn);
         // Check if user is signed in
         FirebaseUser currentUser = mAuth.getCurrentUser();
-        if(currentUser == null){
+        if (currentUser == null) {
             textUser.setText("No hay ninguna sesión activa.");
         } else {
             String email = currentUser.getEmail();
@@ -301,7 +299,8 @@ public class MainActivity extends AppCompatActivity {
         alert.show();
     }
 
-    private void signInUser(String email, String pswd){
+    // Sign in user with provided credentials
+    private void signInUser(String email, String pswd) {
         mAuth.signInWithEmailAndPassword(email, pswd)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
@@ -323,11 +322,12 @@ public class MainActivity extends AppCompatActivity {
 
 }
 
+// To prevent the recycling of views taking into account that only 15 items will be present in the list at once and selection will be shown changing the bg color
 class MySimpleArrayAdapter extends ArrayAdapter<String> {
     private final Context context;
     private final String[] values;
 
-    public MySimpleArrayAdapter(Context context,int textViewResourceId, String[] values) {
+    public MySimpleArrayAdapter(Context context, int textViewResourceId, String[] values) {
         super(context, textViewResourceId, values);
         this.context = context;
         this.values = values;

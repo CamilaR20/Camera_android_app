@@ -9,7 +9,6 @@ import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageCaptureException;
 import androidx.camera.core.Preview;
 import androidx.camera.core.VideoCapture;
-import androidx.camera.core.impl.CaptureConfig;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
@@ -23,7 +22,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.util.Log;
+//import android.util.Log;
 import android.util.Size;
 import android.view.View;
 import android.widget.Button;
@@ -247,10 +246,10 @@ public class CameraActivity extends AppCompatActivity {
         alert.show();
     }
 
-    // Selects which activity to go to when recording finishes
+    // Selects which activity to go to on each step of the test
     void goToOther(){
         counter ++;
-//        counter = 6;
+        // Decide which activity to go: either to tutorial for next movement or to break for next hand
         if (counter <= 5) {
             Intent intent;
             if (counter == 2 || counter == 4){
@@ -305,7 +304,7 @@ public class CameraActivity extends AppCompatActivity {
 
     }
 
-    // When movement videos are done
+    // When movement videos are done show alert that says test was completed to return to the main activity
     void finishAlert(){
         AlertDialog.Builder builder = new AlertDialog.Builder(CameraActivity.this);
         builder.setTitle("Prueba Finalizada").setMessage("Prueba realizada satisfactoriamente.").setCancelable(false)
@@ -317,6 +316,7 @@ public class CameraActivity extends AppCompatActivity {
         alert.show();
     }
 
+    // Delete folder and files within
     private void DeleteRecursive(File fileOrDirectory) {
         if (fileOrDirectory.isDirectory())
             for (File child : fileOrDirectory.listFiles()) {
@@ -326,6 +326,7 @@ public class CameraActivity extends AppCompatActivity {
         fileOrDirectory.delete();
     }
 
+    // Don´t allow to go back from this screen
     @Override
     public void onBackPressed () {
 
